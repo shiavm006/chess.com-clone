@@ -56,6 +56,12 @@ const renderBoard = () => {
       boardElement.appendChild(squareElement);
     });
   });
+  if(playerRole ==="b"){
+    boardElement.classList.add("flipped");
+  }
+  else{
+    boardElement.classList.remove("flipped");
+  }
 };
 
 const getPieceUnicode = (type, color) => {
@@ -70,7 +76,38 @@ const getPieceUnicode = (type, color) => {
   return unicodePieces[type][color];
 };
 
-const handleMove = () => {};
+const handleMove = (source,target) => {
+    const move = {
+      from: `${String.fromCharCode(97+source.col)}${8-source.row}`,
+      to: `${String.fromCharCode(97+target.col)}${8-target.row}`,
+      promotion: "q",
+    };
+    const result = chess.move(move);
+        if (result) {
+            renderBoard(); // Show move immediately
+            socket.emit("move", move); // Inform server
+        } else {
+        console.warn("Invalid move:", move);
+        }
+};
+socket.on("playerRole",function(role){
+    playerRole = role
+    renderBoard();
+})
 
+socket.on("spectatorRole",function(){
+    playerRole = null
+    renderBoard();
+})
+
+socket.on("broadState",function(fen){
+    chess.load(fen);
+    renderBoard();
+})
+
+socket.on("move",function(move){
+    chess.move(move);
+    renderBoard();
+})
 // Call renderBoard to display the chessboard
 renderBoard();

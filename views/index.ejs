@@ -56,9 +56,13 @@
       }
 
       /* Rotate pieces for black player */
-      .flipped .piece {
+      .chessboard.flipped {
         transform: rotate(180deg);
-      }
+        }
+      .chessboard.flipped .square {
+        transform: rotate(180deg); /* counter-rotate individual squares */
+        }
+
     </style>
   </head>
   <body>
