@@ -21,13 +21,15 @@ app.get("/", (req, res) => {
 });
 
 io.on("connection", function (uniquesocket) {
-  console.log("connected");
+  console.log("connected",uniquesocket.id);
 
   if (!players.white) {
     players.socket = uniquesocket.id;
+    players.white = uniquesocket.id;
     uniquesocket.emit("playerRole", "w");
   } else if (!players.black) {
     players.socket = uniquesocket.id;
+    players.black = uniquesocket.id;
     uniquesocket.emit("playerRole", "b");
   } else {
     uniquesocket.emit("spectatorRole");
@@ -39,6 +41,7 @@ io.on("connection", function (uniquesocket) {
       delete players.black;
     }
   });
+  console.log(players.white,players.black)
   uniquesocket.on("move", (move) => {
     try {
       if (chess.turn() === "w" && uniquesocket.id !== players.white) return;
@@ -61,6 +64,6 @@ io.on("connection", function (uniquesocket) {
   });
 });
 
-server.listen(3000, function () {
+server.listen(3000,"0.0.0.0", function () {
   console.log("Server is running on port 3000");
 });
