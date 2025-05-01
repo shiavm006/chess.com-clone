@@ -64,6 +64,6 @@ io.on("connection", function (uniquesocket) {
   });
 });
 
-server.listen(3000,"0.0.0.0", function () {
+server.listen(3000, function () {
   console.log("Server is running on port 3000");
 });
