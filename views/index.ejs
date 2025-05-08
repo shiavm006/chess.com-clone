@@ -14,6 +14,7 @@
         height: 400px;
         transform: rotate(0deg);
       }
+<<<<<<< HEAD
 
       .piece.white {
         color: white;
@@ -63,6 +64,53 @@
         transform: rotate(180deg); /* counter-rotate individual squares */
         }
 
+=======
+
+      .piece.white {
+        color: white;
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 1));
+      }
+
+      .piece.black {
+        color: black;
+      }
+
+      .flipped {
+        transform: rotate(180deg);
+      }
+
+      .square {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .square.light {
+        background-color: #f0d9b5;
+      }
+
+      .square.dark {
+        background-color: #b58863;
+      }
+
+      .piece {
+        font-size: 36px;
+        cursor: pointer;
+      }
+
+      .piece.draggable {
+        cursor: grab;
+      }
+
+      .dragging {
+        opacity: 0.5;
+      }
+
+      /* Rotate pieces for black player */
+      .flipped .piece {
+        transform: rotate(180deg);
+      }
+>>>>>>> origin/main
     </style>
   </head>
   <body>
@@ -82,4 +130,8 @@
     ></script>
     <script src="/js/chessgame.js"></script>
   </body>
+<<<<<<< HEAD
 </html>
+=======
+</html>
+>>>>>>> origin/main
