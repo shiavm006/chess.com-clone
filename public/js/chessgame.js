@@ -1,4 +1,9 @@
-const socket = io();
+const socket = io(window.location.origin, {
+  transports: ['websocket', 'polling'],
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000
+});
 const chess = new Chess();
 const boardElement = document.querySelector(".chessboard");
 const startScreen = document.querySelector(".start-screen");
@@ -19,8 +24,19 @@ const getRoomId = () => {
 
 // Join room on connection
 socket.on('connect', () => {
+  console.log('Connected to server');
   const roomId = getRoomId();
   socket.emit('joinRoom', roomId);
+});
+
+socket.on('disconnect', () => {
+  console.log('Disconnected from server');
+  gameStatus.textContent = 'Connection lost. Reconnecting...';
+});
+
+socket.on('connect_error', (error) => {
+  console.error('Connection error:', error);
+  gameStatus.textContent = 'Connection error. Please refresh the page.';
 });
 
 // Handle game start

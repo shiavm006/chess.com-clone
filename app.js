@@ -6,7 +6,15 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = socket(server);
+
+// Configure Socket.IO with CORS
+const io = socket(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  transports: ['websocket', 'polling']
+});
 
 // Store multiple game rooms
 const gameRooms = new Map();
@@ -23,14 +31,15 @@ const createGameRoom = (roomId) => {
   };
 };
 
-app.set("view engine", "ejs");
+// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs");
 
+// Routes
 app.get("/", (req, res) => {
   res.render("index", { title: "Chess Game" });
 });
 
-// Add route for creating/joining specific game rooms
 app.get("/game/:roomId", (req, res) => {
   const roomId = req.params.roomId;
   if (!gameRooms.has(roomId)) {
@@ -39,6 +48,7 @@ app.get("/game/:roomId", (req, res) => {
   res.render("index", { title: `Chess Game - Room ${roomId}`, roomId });
 });
 
+// Socket.IO connection handling
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
   let currentRoom = null;
@@ -74,6 +84,20 @@ io.on("connection", (socket) => {
 
     // Send current game state
     socket.emit("broadState", room.chess.fen());
+  });
+
+  // Handle game start
+  socket.on("startGame", (roomId) => {
+    if (gameRooms.has(roomId)) {
+      const room = gameRooms.get(roomId);
+      if (room.players.white && room.players.black) {
+        // Reset the game
+        room.chess = new Chess();
+        // Notify all players in the room
+        io.to(roomId).emit("gameStarted");
+        io.to(roomId).emit("broadState", room.chess.fen());
+      }
+    }
   });
 
   // Handle disconnection
@@ -140,22 +164,9 @@ io.on("connection", (socket) => {
       socket.emit("error", "Invalid move");
     }
   });
-
-  // Handle game start
-  socket.on("startGame", (roomId) => {
-    if (gameRooms.has(roomId)) {
-      const room = gameRooms.get(roomId);
-      if (room.players.white && room.players.black) {
-        // Reset the game
-        room.chess = new Chess();
-        // Notify all players in the room
-        io.to(roomId).emit("gameStarted");
-        io.to(roomId).emit("broadState", room.chess.fen());
-      }
-    }
-  });
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
