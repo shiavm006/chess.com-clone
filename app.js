@@ -140,6 +140,20 @@ io.on("connection", (socket) => {
       socket.emit("error", "Invalid move");
     }
   });
+
+  // Handle game start
+  socket.on("startGame", (roomId) => {
+    if (gameRooms.has(roomId)) {
+      const room = gameRooms.get(roomId);
+      if (room.players.white && room.players.black) {
+        // Reset the game
+        room.chess = new Chess();
+        // Notify all players in the room
+        io.to(roomId).emit("gameStarted");
+        io.to(roomId).emit("broadState", room.chess.fen());
+      }
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3000;

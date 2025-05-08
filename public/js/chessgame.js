@@ -1,12 +1,15 @@
 const socket = io();
 const chess = new Chess();
 const boardElement = document.querySelector(".chessboard");
+const startScreen = document.querySelector(".start-screen");
+const startButton = document.getElementById("startGame");
+const gameStatus = document.querySelector(".game-status");
 
 let draggedPiece = null;
 let sourceSquare = null;
 let playerRole = null;
+let gameStarted = false;
 
-<<<<<<< HEAD
 // Get room ID from URL
 const getRoomId = () => {
   const path = window.location.pathname;
@@ -20,6 +23,14 @@ socket.on('connect', () => {
   socket.emit('joinRoom', roomId);
 });
 
+// Handle game start
+startButton.addEventListener('click', () => {
+  const roomId = getRoomId();
+  socket.emit('startGame', roomId);
+  startScreen.classList.add('hidden');
+  gameStatus.classList.remove('hidden');
+});
+
 const getPieceUnicode = (type, color) => {
   const unicodePieces = {
     p: { w: "♙", b: "♟" },
@@ -28,73 +39,10 @@ const getPieceUnicode = (type, color) => {
     b: { w: "♗", b: "♝" },
     q: { w: "♕", b: "♛" },
     k: { w: "♔", b: "♚" }
-=======
-const renderBoard = () => {
-  const board = chess.board();
-  boardElement.innerHTML = "";
-  board.forEach((row, rowindex) => {
-    row.forEach((square, squareindex) => {
-      const squareElement = document.createElement("div");
-      squareElement.classList.add(
-        "square",
-        (rowindex + squareindex) % 2 === 0 ? "light" : "dark"
-      );
-      squareElement.dataset.row = rowindex;
-      squareElement.dataset.col = squareindex;
-
-      if (square) {
-        const pieceElement = document.createElement("div");
-        pieceElement.classList.add(
-          "piece",
-          square.color === "w" ? "white" : "black"
-        );
-        pieceElement.innerText = getPieceUnicode(square.type, square.color); // <-- Use Unicode
-        pieceElement.draggable = playerRole === square.color;
-        pieceElement.addEventListener("dragstart", (e) => {
-          if (pieceElement.draggable) {
-            draggedPiece = pieceElement;
-            sourceSquare = { row: rowindex, col: squareindex };
-            e.dataTransfer.setData("text/plain", "");
-          }
-        });
-        pieceElement.addEventListener("dragend", () => {
-          draggedPiece = null;
-          sourceSquare = null;
-        });
-        squareElement.appendChild(pieceElement);
-      }
-      squareElement.addEventListener("dragover", (e) => {
-        e.preventDefault();
-      });
-      squareElement.addEventListener("drop", (e) => {
-        e.preventDefault();
-        if (draggedPiece) {
-          const targetSquare = {
-            row: parseInt(squareElement.dataset.row),
-            col: parseInt(squareElement.dataset.col),
-          };
-          handleMove(sourceSquare, targetSquare);
-        }
-      });
-      boardElement.appendChild(squareElement);
-    });
-  });
-};
-
-const getPieceUnicode = (type, color) => {
-  const unicodePieces = {
-    p: { w: "\u2659", b: "\u265F" },
-    r: { w: "\u2656", b: "\u265C" },
-    n: { w: "\u2658", b: "\u265E" },
-    b: { w: "\u2657", b: "\u265D" },
-    q: { w: "\u2655", b: "\u265B" },
-    k: { w: "\u2654", b: "\u265A" },
->>>>>>> origin/main
   };
   return unicodePieces[type][color];
 };
 
-<<<<<<< HEAD
 const renderBoard = () => {
   const board = chess.board();
   boardElement.innerHTML = "";
@@ -115,7 +63,7 @@ const renderBoard = () => {
           square.color === "w" ? "white" : "black"
         );
         pieceElement.innerText = getPieceUnicode(square.type, square.color);
-        pieceElement.draggable = playerRole === square.color;
+        pieceElement.draggable = gameStarted && playerRole === square.color;
         pieceElement.addEventListener("dragstart", (e) => {
           if (pieceElement.draggable) {
             draggedPiece = pieceElement;
@@ -134,7 +82,7 @@ const renderBoard = () => {
       });
       squareElement.addEventListener("drop", (e) => {
         e.preventDefault();
-        if (draggedPiece) {
+        if (draggedPiece && gameStarted) {
           const targetSquare = {
             row: parseInt(squareElement.dataset.row),
             col: parseInt(squareElement.dataset.col),
@@ -195,24 +143,26 @@ socket.on("move", (move) => {
   renderBoard();
 });
 
-// Add error handling
+socket.on("gameStarted", () => {
+  gameStarted = true;
+  gameStatus.textContent = playerRole === "w" ? "Your turn" : "Opponent's turn";
+  renderBoard();
+});
+
 socket.on("error", (message) => {
   console.warn("Game error:", message);
-  // You can add a UI notification here
   alert(message);
 });
 
-// Add game over handling
 socket.on("gameOver", (result) => {
   console.log("Game over:", result);
-  // You can add a UI notification here
-  alert(result);
+  gameStatus.textContent = result;
+  gameStarted = false;
+  setTimeout(() => {
+    startScreen.classList.remove('hidden');
+    gameStatus.classList.add('hidden');
+  }, 3000);
 });
 
 // Initialize the board
-=======
-const handleMove = () => {};
-
-// Call renderBoard to display the chessboard
->>>>>>> origin/main
 renderBoard();

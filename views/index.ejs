@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Chess Game</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
       .chessboard {
@@ -14,7 +14,6 @@
         height: 400px;
         transform: rotate(0deg);
       }
-<<<<<<< HEAD
 
       .piece.white {
         color: white;
@@ -57,64 +56,69 @@
       }
 
       /* Rotate pieces for black player */
-      .chessboard.flipped {
+      .chessboard.flipped .piece {
         transform: rotate(180deg);
-        }
-      .chessboard.flipped .square {
-        transform: rotate(180deg); /* counter-rotate individual squares */
-        }
+      }
 
-=======
-
-      .piece.white {
+      .game-status {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
         color: white;
-        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 1));
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 1000;
       }
 
-      .piece.black {
-        color: black;
-      }
-
-      .flipped {
-        transform: rotate(180deg);
-      }
-
-      .square {
+      .start-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
+        align-items: center;
+        z-index: 2000;
       }
 
-      .square.light {
-        background-color: #f0d9b5;
+      .start-screen h1 {
+        color: white;
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
       }
 
-      .square.dark {
-        background-color: #b58863;
-      }
-
-      .piece {
-        font-size: 36px;
+      .start-screen button {
+        background: #4CAF50;
+        color: white;
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2rem;
         cursor: pointer;
+        transition: background 0.3s;
       }
 
-      .piece.draggable {
-        cursor: grab;
+      .start-screen button:hover {
+        background: #45a049;
       }
 
-      .dragging {
-        opacity: 0.5;
+      .start-screen.hidden {
+        display: none;
       }
-
-      /* Rotate pieces for black player */
-      .flipped .piece {
-        transform: rotate(180deg);
-      }
->>>>>>> origin/main
     </style>
   </head>
   <body>
     <div class="w-full h-screen flex items-center justify-center bg-zinc-900">
+      <div class="game-status hidden">Waiting for opponent...</div>
+      <div class="start-screen">
+        <h1>Chess Game</h1>
+        <button id="startGame">Start New Game</button>
+      </div>
       <div class="chessboard w-96 h-96"></div>
     </div>
     <script
@@ -130,8 +134,4 @@
     ></script>
     <script src="/js/chessgame.js"></script>
   </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> origin/main
