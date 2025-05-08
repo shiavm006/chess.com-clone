@@ -5,13 +5,23 @@ const { Chess } = require("chess.js");
 const path = require("path");
 
 const app = express();
-
 const server = http.createServer(app);
 const io = socket(server);
 
-const chess = new Chess();
-let players = {};
-let currentPlayer = "White";
+// Store multiple game rooms
+const gameRooms = new Map();
+
+// Create a new game room
+const createGameRoom = (roomId) => {
+  return {
+    chess: new Chess(),
+    players: {
+      white: null,
+      black: null
+    },
+    spectators: new Set()
+  };
+};
 
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
@@ -20,50 +30,119 @@ app.get("/", (req, res) => {
   res.render("index", { title: "Chess Game" });
 });
 
-io.on("connection", function (uniquesocket) {
-  console.log("connected",uniquesocket.id);
-
-  if (!players.white) {
-    players.socket = uniquesocket.id;
-    players.white = uniquesocket.id;
-    uniquesocket.emit("playerRole", "w");
-  } else if (!players.black) {
-    players.socket = uniquesocket.id;
-    players.black = uniquesocket.id;
-    uniquesocket.emit("playerRole", "b");
-  } else {
-    uniquesocket.emit("spectatorRole");
+// Add route for creating/joining specific game rooms
+app.get("/game/:roomId", (req, res) => {
+  const roomId = req.params.roomId;
+  if (!gameRooms.has(roomId)) {
+    gameRooms.set(roomId, createGameRoom(roomId));
   }
-  uniquesocket.on("disconnect", function () {
-    if (uniquesocket.id === players.white) {
-      delete players.white;
-    } else if (uniquesocket.id === players.black) {
-      delete players.black;
+  res.render("index", { title: `Chess Game - Room ${roomId}`, roomId });
+});
+
+io.on("connection", (socket) => {
+  console.log("Player connected:", socket.id);
+  let currentRoom = null;
+
+  // Handle joining a room
+  socket.on("joinRoom", (roomId) => {
+    if (currentRoom) {
+      socket.leave(currentRoom);
+    }
+
+    if (!gameRooms.has(roomId)) {
+      gameRooms.set(roomId, createGameRoom(roomId));
+    }
+
+    const room = gameRooms.get(roomId);
+    currentRoom = roomId;
+    socket.join(roomId);
+
+    // Assign player roles
+    if (!room.players.white) {
+      room.players.white = socket.id;
+      socket.emit("playerRole", "w");
+      console.log(`Assigned white role to ${socket.id} in room ${roomId}`);
+    } else if (!room.players.black) {
+      room.players.black = socket.id;
+      socket.emit("playerRole", "b");
+      console.log(`Assigned black role to ${socket.id} in room ${roomId}`);
+    } else {
+      room.spectators.add(socket.id);
+      socket.emit("spectatorRole");
+      console.log(`Assigned spectator role to ${socket.id} in room ${roomId}`);
+    }
+
+    // Send current game state
+    socket.emit("broadState", room.chess.fen());
+  });
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    if (currentRoom && gameRooms.has(currentRoom)) {
+      const room = gameRooms.get(currentRoom);
+      
+      if (socket.id === room.players.white) {
+        console.log(`White player disconnected from room ${currentRoom}:`, socket.id);
+        room.players.white = null;
+      } else if (socket.id === room.players.black) {
+        console.log(`Black player disconnected from room ${currentRoom}:`, socket.id);
+        room.players.black = null;
+      } else {
+        room.spectators.delete(socket.id);
+      }
+
+      // Clean up empty rooms
+      if (!room.players.white && !room.players.black && room.spectators.size === 0) {
+        gameRooms.delete(currentRoom);
+        console.log(`Removed empty room ${currentRoom}`);
+      }
     }
   });
-  console.log(players.white,players.black)
-  uniquesocket.on("move", (move) => {
-    try {
-      if (chess.turn() === "w" && uniquesocket.id !== players.white) return;
-      if (chess.turn() === "b" && uniquesocket.id !== players.black) return;
 
-      const result = chess.move(move);
+  // Handle moves
+  socket.on("move", (move) => {
+    if (!currentRoom || !gameRooms.has(currentRoom)) return;
+
+    const room = gameRooms.get(currentRoom);
+    try {
+      // Validate player's turn
+      if (room.chess.turn() === "w" && socket.id !== room.players.white) {
+        socket.emit("error", "Not your turn");
+        return;
+      }
+      if (room.chess.turn() === "b" && socket.id !== room.players.black) {
+        socket.emit("error", "Not your turn");
+        return;
+      }
+
+      const result = room.chess.move(move);
       if (result) {
-        currentPlayer = chess.turn();
-        io.emit("move", move);
-        io.emit("broadState", chess.fen());
-        ``;
+        // Broadcast move to all clients in the room
+        io.to(currentRoom).emit("move", move);
+        io.to(currentRoom).emit("broadState", room.chess.fen());
+        
+        // Check for game end conditions
+        if (room.chess.isGameOver()) {
+          let gameResult = "Game Over - ";
+          if (room.chess.isCheckmate()) gameResult += "Checkmate";
+          else if (room.chess.isDraw()) gameResult += "Draw";
+          else if (room.chess.isStalemate()) gameResult += "Stalemate";
+          else if (room.chess.isThreefoldRepetition()) gameResult += "Threefold Repetition";
+          else if (room.chess.isInsufficientMaterial()) gameResult += "Insufficient Material";
+          
+          io.to(currentRoom).emit("gameOver", gameResult);
+        }
       } else {
-        console.log("Invalid Move");
-        uniquesocket.emit("invalidMove", move);
+        socket.emit("error", "Invalid move");
       }
     } catch (err) {
-      console.log(err);
-      uniquesocket.emit("Invalid Move: ", move);
+      console.error("Move error:", err);
+      socket.emit("error", "Invalid move");
     }
   });
 });
 
-server.listen(3000, function () {
-  console.log("Server is running on port 3000");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

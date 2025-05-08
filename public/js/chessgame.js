@@ -6,6 +6,31 @@ let draggedPiece = null;
 let sourceSquare = null;
 let playerRole = null;
 
+// Get room ID from URL
+const getRoomId = () => {
+  const path = window.location.pathname;
+  const match = path.match(/\/game\/([^\/]+)/);
+  return match ? match[1] : 'default';
+};
+
+// Join room on connection
+socket.on('connect', () => {
+  const roomId = getRoomId();
+  socket.emit('joinRoom', roomId);
+});
+
+const getPieceUnicode = (type, color) => {
+  const unicodePieces = {
+    p: { w: "♙", b: "♟" },
+    r: { w: "♖", b: "♜" },
+    n: { w: "♘", b: "♞" },
+    b: { w: "♗", b: "♝" },
+    q: { w: "♕", b: "♛" },
+    k: { w: "♔", b: "♚" }
+  };
+  return unicodePieces[type][color];
+};
+
 const renderBoard = () => {
   const board = chess.board();
   boardElement.innerHTML = "";
@@ -25,7 +50,7 @@ const renderBoard = () => {
           "piece",
           square.color === "w" ? "white" : "black"
         );
-        pieceElement.innerText = getPieceUnicode(square.type, square.color); // <-- Use Unicode
+        pieceElement.innerText = getPieceUnicode(square.type, square.color);
         pieceElement.draggable = playerRole === square.color;
         pieceElement.addEventListener("dragstart", (e) => {
           if (pieceElement.draggable) {
@@ -56,58 +81,69 @@ const renderBoard = () => {
       boardElement.appendChild(squareElement);
     });
   });
-  if(playerRole ==="b"){
+  
+  // Handle board flipping for black player
+  if (playerRole === "b") {
     boardElement.classList.add("flipped");
-  }
-  else{
+  } else {
     boardElement.classList.remove("flipped");
   }
 };
 
-const getPieceUnicode = (type, color) => {
-  const unicodePieces = {
-    p: { w: "\u2659", b: "\u265F" },
-    r: { w: "\u2656", b: "\u265C" },
-    n: { w: "\u2658", b: "\u265E" },
-    b: { w: "\u2657", b: "\u265D" },
-    q: { w: "\u2655", b: "\u265B" },
-    k: { w: "\u2654", b: "\u265A" },
+const handleMove = (source, target) => {
+  const move = {
+    from: `${String.fromCharCode(97 + source.col)}${8 - source.row}`,
+    to: `${String.fromCharCode(97 + target.col)}${8 - target.row}`,
+    promotion: "q" // Always promote to queen for simplicity
   };
-  return unicodePieces[type][color];
-};
-
-const handleMove = (source,target) => {
-    const move = {
-      from: `${String.fromCharCode(97+source.col)}${8-source.row}`,
-      to: `${String.fromCharCode(97+target.col)}${8-target.row}`,
-      promotion: "q",
-    };
+  
+  try {
     const result = chess.move(move);
-        if (result) {
-            renderBoard(); // Show move immediately
-            socket.emit("move", move); // Inform server
-        } else {
-        console.warn("Invalid move:", move);
-        }
+    if (result) {
+      renderBoard();
+      socket.emit("move", move);
+    } else {
+      console.warn("Invalid move:", move);
+    }
+  } catch (e) {
+    console.error("Invalid move:", e);
+  }
 };
-socket.on("playerRole",function(role){
-    playerRole = role
-    renderBoard();
-})
 
-socket.on("spectatorRole",function(){
-    playerRole = null
-    renderBoard();
-})
+// Socket event handlers
+socket.on("playerRole", (role) => {
+  playerRole = role;
+  renderBoard();
+});
 
-socket.on("broadState",function(fen){
-    chess.load(fen);
-    renderBoard();
-})
+socket.on("spectatorRole", () => {
+  playerRole = null;
+  renderBoard();
+});
 
-socket.on("move",function(move){
-    chess.move(move);
-    renderBoard();
-})
-// Call renderBoard to display the chessboard
+socket.on("broadState", (fen) => {
+  chess.load(fen);
+  renderBoard();
+});
+
+socket.on("move", (move) => {
+  chess.move(move);
+  renderBoard();
+});
+
+// Add error handling
+socket.on("error", (message) => {
+  console.warn("Game error:", message);
+  // You can add a UI notification here
+  alert(message);
+});
+
+// Add game over handling
+socket.on("gameOver", (result) => {
+  console.log("Game over:", result);
+  // You can add a UI notification here
+  alert(result);
+});
+
+// Initialize the board
 renderBoard();
