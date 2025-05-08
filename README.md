@@ -43,6 +43,40 @@ npm run dev
 
 The application will be available at `http://localhost:3000`
 
+## Playing on Local Network
+
+To play with friends on the same local network (e.g., same WiFi):
+
+1. Find your computer's local IP address:
+   - On Windows: Open Command Prompt and type `ipconfig`
+   - On Mac/Linux: Open Terminal and type `ifconfig` or `ip addr`
+   - Look for IPv4 address (usually starts with 192.168. or 10.0.)
+
+2. Update the server configuration in `app.js`:
+```javascript
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';  // Add this line
+server.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+});
+```
+
+3. Start the server:
+```bash
+npm run dev
+```
+
+4. Share the game:
+   - Host player: Use `http://localhost:3000`
+   - Other players: Use `http://<your-local-ip>:3000`
+   - Example: If your IP is 192.168.1.5, others should use `http://192.168.1.5:3000`
+
+5. Troubleshooting:
+   - Ensure all players are on the same network
+   - Check if your firewall allows connections on port 3000
+   - If connection fails, try disabling firewall temporarily
+   - Make sure no other application is using port 3000
+
 
 
 ## How to Play
