@@ -6,6 +6,17 @@ A modern, real-time multiplayer chess game built with Node.js, Express, Socket.I
 ![Node.js](https://img.shields.io/badge/Node.js-v14+-blue)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-v4.8.1-orange)
 
+## Live Demo
+
+The game is now live! You can play it at:
+[Chess Game](https://your-chess-game.com) 
+
+To play with a friend:
+1. Visit the website
+2. Click "Start New Game"
+3. Share the game room URL with your friend
+4. Start playing!
+
 ## Features
 
 - 🎮 Real-time multiplayer gameplay
@@ -43,51 +54,80 @@ npm run dev
 
 The application will be available at `http://localhost:3000`
 
-## Playing on Local Network
+## Deployment
 
-To play with friends on the same local network (e.g., same WiFi):
+The application is configured for deployment on Railway. Follow these steps to deploy:
 
-1. Find your computer's local IP address:
-   - On Windows: Open Command Prompt and type `ipconfig`
-   - On Mac/Linux: Open Terminal and type `ifconfig` or `ip addr`
-   - Look for IPv4 address (usually starts with 192.168. or 10.0.)
-
-2. Update the server configuration in `app.js`:
-```javascript
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';  // Add this line
-server.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://${HOST}:${PORT}`);
-});
-```
-
-3. Start the server:
+1. Install Railway CLI:
 ```bash
-npm run dev
+npm i -g @railway/cli
 ```
 
-4. Share the game:
-   - Host player: Use `http://localhost:3000`
-   - Other players: Use `http://<your-local-ip>:3000`
-   - Example: If your IP is 192.168.1.5, others should use `http://192.168.1.5:3000`
+2. Login to Railway:
+```bash
+railway login
+```
 
-5. Troubleshooting:
-   - Ensure all players are on the same network
-   - Check if your firewall allows connections on port 3000
-   - If connection fails, try disabling firewall temporarily
-   - Make sure no other application is using port 3000
+3. Initialize the project:
+```bash
+railway init
+```
 
-
+4. Deploy:
+```bash
+railway up
+```
 
 ## How to Play
 
-1. Open the game in your browser
-2. Click "Start New Game"
-3. Share the game URL with a friend
-4. Once both players join, the game will start automatically
-5. White moves first, followed by black
-6. Drag and drop pieces to make moves
-7. The game will automatically detect checkmate, stalemate, and other end conditions
+### Playing Online (Recommended)
+
+1. Visit [https://your-chess-game.com](https://your-chess-game.com)
+2. Click the "Start New Game" button
+3. Share the game room URL with your opponent
+4. Wait for your opponent to join
+5. The first player gets white pieces, the second gets black
+6. Start playing!
+
+### Playing Locally (Development)
+
+1. Start the server:
+```bash
+npm start
+```
+
+2. Open your browser and navigate to:
+   - For local play: `http://localhost:3000`
+   - For network play: `http://<your-ip-address>:3000`
+
+3. Game Controls:
+   - Click and drag pieces to move them
+   - The game automatically validates moves
+   - White moves first
+   - The game will indicate whose turn it is
+   - Invalid moves will be rejected
+   - The game will announce checkmate, stalemate, or other end conditions
+
+## Troubleshooting
+
+If you encounter any issues:
+
+1. Connection Problems:
+   - Ensure both players are on the same network
+   - Check if port 3000 is available
+   - Try refreshing the page
+   - Check your firewall settings
+
+2. Game Issues:
+   - If the board doesn't load, refresh the page
+   - If moves aren't registering, check your internet connection
+   - If the game freezes, refresh the page and start a new game
+
+3. Deployment Issues:
+   - Make sure all dependencies are installed
+   - Check if the Railway CLI is properly installed
+   - Verify your Railway account is active
+   - Check the Railway dashboard for deployment logs
 
 ## Game Rules
 

@@ -168,6 +168,8 @@ io.on("connection", (socket) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+const HOST = '0.0.0.0';  // Allow connections from any IP
+server.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+  console.log(`Local access: http://localhost:${PORT}`);
 });

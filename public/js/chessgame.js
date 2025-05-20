@@ -2,7 +2,8 @@ const socket = io(window.location.origin, {
   transports: ['websocket', 'polling'],
   reconnection: true,
   reconnectionAttempts: 5,
-  reconnectionDelay: 1000
+  reconnectionDelay: 1000,
+  timeout: 10000
 });
 const chess = new Chess();
 const boardElement = document.querySelector(".chessboard");
@@ -36,7 +37,23 @@ socket.on('disconnect', () => {
 
 socket.on('connect_error', (error) => {
   console.error('Connection error:', error);
-  gameStatus.textContent = 'Connection error. Please refresh the page.';
+  gameStatus.textContent = 'Connection error. Please check your network and refresh the page.';
+  gameStatus.classList.remove('hidden');
+});
+
+socket.on('reconnect_attempt', (attemptNumber) => {
+  console.log(`Reconnection attempt ${attemptNumber}`);
+  gameStatus.textContent = `Reconnecting... Attempt ${attemptNumber}/5`;
+  gameStatus.classList.remove('hidden');
+});
+
+socket.on('reconnect', (attemptNumber) => {
+  console.log(`Reconnected after ${attemptNumber} attempts`);
+  gameStatus.textContent = 'Reconnected! Game will resume shortly...';
+  setTimeout(() => {
+    const roomId = getRoomId();
+    socket.emit('joinRoom', roomId);
+  }, 1000);
 });
 
 // Handle game start
@@ -119,6 +136,16 @@ const renderBoard = () => {
 };
 
 const handleMove = (source, target) => {
+  if (!gameStarted) {
+    console.warn("Game hasn't started yet");
+    return;
+  }
+
+  if (!playerRole) {
+    console.warn("You are a spectator");
+    return;
+  }
+
   const move = {
     from: `${String.fromCharCode(97 + source.col)}${8 - source.row}`,
     to: `${String.fromCharCode(97 + target.col)}${8 - target.row}`,
@@ -130,11 +157,20 @@ const handleMove = (source, target) => {
     if (result) {
       renderBoard();
       socket.emit("move", move);
+      gameStatus.textContent = "Waiting for opponent's move...";
     } else {
       console.warn("Invalid move:", move);
+      gameStatus.textContent = "Invalid move!";
+      setTimeout(() => {
+        gameStatus.textContent = playerRole === "w" ? "Your turn" : "Opponent's turn";
+      }, 2000);
     }
   } catch (e) {
     console.error("Invalid move:", e);
+    gameStatus.textContent = "Invalid move!";
+    setTimeout(() => {
+      gameStatus.textContent = playerRole === "w" ? "Your turn" : "Opponent's turn";
+    }, 2000);
   }
 };
 
